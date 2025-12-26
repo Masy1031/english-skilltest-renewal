@@ -76,9 +76,12 @@
    ```
 
 3. **環境変数の設定**
-   プロジェクトルートに `.env` ファイルを作成し、APIキーを設定してください。
+   `.env.example` をコピーして `.env` ファイルを作成し、APIキーを設定してください。
+   ```bash
+   cp .env.example .env
+   ```
    ```env
-   VITE_API_KEY=AIzaSyDa-xxxxxxxxxxxxxxxxxxxxxxxx
+   API_KEY=AIzaSyDa-xxxxxxxxxxxxxxxxxxxxxxxx
    ```
    **注意:** `.env` ファイルはGitにコミットしないでください（`.gitignore`で除外設定済みです）。
 
