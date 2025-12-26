@@ -64,7 +64,7 @@ const WRITING_SITUATIONS = [
 
 // --- Few-Shot Examples ---
 
-const READING_FEW_SHOT = \`
+const READING_FEW_SHOT = `
 出力例:
 {
   "subject": "Urgent: Production DB CPU Spike",
@@ -91,9 +91,9 @@ const READING_FEW_SHOT = \`
     }
   ]
 }
-\`;
+`;
 
-const WRITING_SCENARIO_FEW_SHOT = \`
+const WRITING_SCENARIO_FEW_SHOT = `
 出力例:
 {
   "context": "You received a Slack message from the QA team: 'The login button on the staging environment is not working on Safari.'",
@@ -101,9 +101,9 @@ const WRITING_SCENARIO_FEW_SHOT = \`
   "goal": "バグの再現手順を尋ね、調査することを伝える",
   "keyPoints": ["Safariのバージョンを確認する", "コンソールエラーがあるか聞く", "今から調査を開始することを伝える"]
 }
-\`;
+`;
 
-const EVALUATION_FEW_SHOT = \`
+const EVALUATION_FEW_SHOT = `
 入力例 (ユーザーのドラフト): "Hey Alex. I fix it. Wait please."
 出力例:
 {
@@ -112,7 +112,7 @@ const EVALUATION_FEW_SHOT = \`
   "improvedVersion": "Hi Alex, thanks for the report. I'll look into it right away. Could you please wait a moment while I investigate?",
   "grammarMistakes": ["'I fix it' は現在形ですが、これから行う動作なので 'I will fix it' または 'I am fixing it' が適切です。", "全体的に単語が不足しており、ぶっきらぼうな印象を与えます。"]
 }
-\`;
+`;
 
 // Helper to pick random element
 const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
@@ -157,12 +157,12 @@ export const generateReadingExercise = async (level: number): Promise<ReadingExe
   const topic = getRandom(TOPICS);
   const tone = getRandom(TONES);
 
-  const prompt = \`ソフトウェアエンジニアが英語を学ぶための読解問題を作成してください。
-  \${levelContext}
+  const prompt = `ソフトウェアエンジニアが英語を学ぶための読解問題を作成してください。
+  ${levelContext}
   
   シナリオ変数:
-  - トピック: \${topic}
-  - トーン: \${tone}
+  - トピック: ${topic}
+  - トーン: ${tone}
   
   上記の変数に基づいて、同僚からのリアルなメールやメッセージを作成してください。
   3つの多肢選択式の読解問題を含めてください。
@@ -212,12 +212,12 @@ export const generateWritingScenario = async (level: number): Promise<WritingSce
   const situation = getRandom(WRITING_SITUATIONS);
   const tone = getRandom(TONES);
 
-  const prompt = \`ソフトウェアエンジニア向けのライティングシナリオを作成してください。
-  \${levelContext}
+  const prompt = `ソフトウェアエンジニア向けのライティングシナリオを作成してください。
+  ${levelContext}
   
   シナリオ変数:
-  - シチュエーション: \${situation}
-  - 希望するトーン: \${tone}
+  - シチュエーション: ${situation}
+  - 希望するトーン: ${tone}
   
   フォーマット制約:
   1. 'context' は英語で記述してください（受信したメッセージや状況をシミュレート）。
@@ -263,14 +263,14 @@ const FEEDBACK_SCHEMA: Schema = {
 export const evaluateWriting = async (level: number, scenario: WritingScenario, userDraft: string): Promise<WritingFeedback> => {
   Logger.info("Evaluating User Draft");
   const levelContext = getLevelContext(level);
-  const prompt = \`ソフトウェアエンジニアによる英語の書き込みを評価してください。
-  \${levelContext}
+  const prompt = `ソフトウェアエンジニアによる英語の書き込みを評価してください。
+  ${levelContext}
   
-  シナリオの背景: \${scenario.context}
-  ゴール (日本語): \${scenario.goal}
-  受信者: \${scenario.recipientRole}
+  シナリオの背景: ${scenario.context}
+  ゴール (日本語): ${scenario.goal}
+  受信者: ${scenario.recipientRole}
   
-  ユーザーのドラフト: "\${userDraft}"
+  ユーザーのドラフト: "${userDraft}"
   
   出力要件:
   1. 'score': 0-100点。
