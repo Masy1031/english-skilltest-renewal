@@ -1,4 +1,18 @@
 export const Logger = {
+  init: () => {
+    if (typeof window !== 'undefined') {
+      window.onerror = (message, source, lineno, colno, error) => {
+        Logger.error("Global Uncaught Error", { message, source, lineno, colno, error });
+      };
+
+      window.onunhandledrejection = (event) => {
+        Logger.error("Global Unhandled Rejection", { reason: event.reason });
+      };
+      
+      Logger.info("Logger initialized");
+    }
+  },
+
   info: (message: string, data?: any) => {
     console.log(`[INFO] ${new Date().toISOString()} - ${message}`, data || '');
   },

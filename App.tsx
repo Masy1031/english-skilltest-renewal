@@ -36,6 +36,7 @@ function App() {
 
   // Error Handler passed to children
   const handleError = (msg: string) => {
+    Logger.error("Application Error", { message: msg });
     setGlobalError(msg);
     // Auto clear after 10 seconds
     setTimeout(() => setGlobalError(null), 10000);
