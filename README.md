@@ -20,8 +20,8 @@
 ### 1. 📧 Reading Comprehension（読解トレーニング）
 **「現場のメールやチャット」を読み解く力を養います。**
 *   **リアルな素材:** 教科書的な文章ではなく、海外エンジニアから送られてくるような少し崩れた表現や専門用語（API, Latency, PRなど）を含んだメールが生成されます。
-*   **無限の問題数:** AIがその都度新しい文章を作成するため、二度と同じ問題は出ません。
-*   **丁寧な解説:** 正解・不正解の理由を日本語で分かりやすく解説します。
+*   **多様なシナリオ:** データベース移行トラブルからCI/CDパイプラインの失敗まで、20種類以上のトピックと10種類以上のトーンを組み合わせ、無限のバリエーションを提供します。
+*   **Few-shot Prompting:** AIに具体的な出力例を与えることで、常に高品質で安定した問題と解説（日本語）を生成します。
 
 ### 2. ✍️ Technical Writing（記述トレーニング）
 **「伝わる技術文書」を書く力を養います。**
@@ -50,13 +50,17 @@
 
 ## 🛠 技術スタック（開発者向け情報）
 
-このアプリケーションは最新のWeb技術と生成AIを組み合わせて構築されています。
+このアプリケーションは最新のWeb技術と生成AIを組み合わせて構築されています。また、堅牢性と保守性を重視した設計を採用しています。
 
 *   **Frontend:** React (TypeScript), Vite
-*   **Styling:** Tailwind CSS (PostCSS)
+*   **Styling:** Tailwind CSS (PostCSS) - *Fully integrated via npm*
 *   **AI Model:** Google Gemini 3 Flash (via Google GenAI SDK)
-*   **Icons:** Lucide React
+    *   *Technique: Few-shot Prompting & In-context Learning*
 *   **State Management:** React Hooks + LocalStorage
+*   **Quality Assurance:**
+    *   **Logging:** Custom Logger Service (Global error tracking)
+    *   **Error Handling:** React Error Boundary
+    *   **Security:** Strict environment variable management (.env)
 
 ---
 
@@ -67,7 +71,7 @@
 1. **リポジトリのクローン**
    ```bash
    git clone [repository-url]
-   cd techcomm-ai
+   cd english-skilltest-renewal
    ```
 
 2. **依存関係のインストール**
@@ -80,16 +84,27 @@
    ```bash
    cp .env.example .env
    ```
+   **設定ファイルの内容:**
    ```env
-   API_KEY=AIzaSyDa-xxxxxxxxxxxxxxxxxxxxxxxx
+   VITE_API_KEY=AIzaSyDa-xxxxxxxxxxxxxxxxxxxxxxxx
    ```
-   **注意:** `.env` ファイルはGitにコミットしないでください（`.gitignore`で除外設定済みです）。
+   > ⚠️ **セキュリティ注意:** `.env` ファイルには実際のAPIキーが含まれるため、絶対にGitにコミットしないでください（`.gitignore`で除外設定済みです）。
 
 4. **アプリケーションの起動**
    ```bash
    npm run dev
    ```
    ブラウザで `http://localhost:5173` にアクセスしてください。
+
+---
+
+## 🛡️ セキュリティと品質管理について
+
+本プロジェクトでは、以下のプラクティスを遵守しています。
+
+*   **機密情報の保護:** APIキーなどの機密情報は `.env` ファイルで管理し、リポジトリには `.env.example` のみを含めています。
+*   **ロギング:** アプリケーション実行時のエラーや重要なイベントは、専用の `Logger` サービスを通じて記録され、デバッグを容易にしています。
+*   **エラーハンドリング:** `ErrorBoundary` を実装し、予期せぬクラッシュが発生した場合でもユーザーに適切なフィードバックを表示します。
 
 ---
 
