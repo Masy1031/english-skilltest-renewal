@@ -8,7 +8,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_NAME = "gemini-3-flash-preview";
 
-// --- Randomization Constants for Diversity ---
+// --- Randomization Constants for Diversity (Expanded) ---
 const TOPICS = [
   "Database Migration Issue",
   "CI/CD Pipeline Failure",
@@ -19,7 +19,17 @@ const TOPICS = [
   "Code Review Disagreement",
   "Urgent Security Patch",
   "Cloud Infrastructure Cost Alert",
-  "Legacy Code Refactoring Proposal"
+  "Legacy Code Refactoring Proposal",
+  "Memory Leak Investigation",
+  "Kubernetes Cluster Misconfiguration",
+  "OAuth2 Authentication Failure",
+  "Redis Cache Inconsistency",
+  "Mobile App Crash on Launch",
+  "Data Privacy Compliance Audit",
+  "Microservices Communication Timeout",
+  "Production Environment SSL Expiry",
+  "Git Merge Conflict Resolution",
+  "Sprint Planning Prioritization"
 ];
 
 const TONES = [
@@ -27,7 +37,12 @@ const TONES = [
   "Formal and professional",
   "Casual and friendly",
   "Frustrated but polite",
-  "Direct and concise"
+  "Direct and concise",
+  "Apologetic and humble",
+  "Encouraging and supportive",
+  "Technical and detailed",
+  "Confused and seeking clarification",
+  "Cautious and hesitant"
 ];
 
 const WRITING_SITUATIONS = [
@@ -37,8 +52,67 @@ const WRITING_SITUATIONS = [
   "Asking for clarification on vague requirements",
   "Proposing a new technology stack to the lead",
   "Onboarding a new team member",
-  "Reporting a blocker in the daily standup"
+  "Reporting a blocker in the daily standup",
+  "Negotiating a release date with the Product Manager",
+  "Giving constructive feedback on a peer's code",
+  "Announcing a breaking change to API consumers",
+  "Requesting budget for a new SaaS tool",
+  "Explaining a technical debt payoff plan",
+  "Apologizing for a downtime incident",
+  "Asking for help with a complex debugging issue"
 ];
+
+// --- Few-Shot Examples ---
+
+const READING_FEW_SHOT = \`
+出力例:
+{
+  "subject": "Urgent: Production DB CPU Spike",
+  "sender": "Sarah, DevOps Lead",
+  "body": "Hi Team, I noticed the primary database CPU usage hit 95% at 2:00 AM UTC. It seems related to the new batch job. I've temporarily disabled the job. Can someone from the backend team investigate the query performance? We need a fix before tonight's peak traffic.",
+  "questions": [
+    {
+      "question": "What is the main problem reported?",
+      "options": ["The database is down", "High CPU usage on the database", "The batch job failed", "Network latency is high"],
+      "correctIndex": 1,
+      "explanation": "メールの冒頭で 'primary database CPU usage hit 95%' と述べられています。"
+    },
+    {
+      "question": "What action did Sarah take?",
+      "options": ["She fixed the query", "She scaled up the database", "She disabled the batch job", "She called the backend team"],
+      "correctIndex": 2,
+      "explanation": "'I've temporarily disabled the job' と書かれています。"
+    },
+    {
+      "question": "What is required from the backend team?",
+      "options": ["Restart the server", "Investigate query performance", "Write a new batch job", "Monitor the traffic"],
+      "correctIndex": 1,
+      "explanation": "'Can someone from the backend team investigate the query performance?' と依頼されています。"
+    }
+  ]
+}
+\`;
+
+const WRITING_SCENARIO_FEW_SHOT = \`
+出力例:
+{
+  "context": "You received a Slack message from the QA team: 'The login button on the staging environment is not working on Safari.'",
+  "recipientRole": "QA Engineer (Alex)",
+  "goal": "バグの再現手順を尋ね、調査することを伝える",
+  "keyPoints": ["Safariのバージョンを確認する", "コンソールエラーがあるか聞く", "今から調査を開始することを伝える"]
+}
+\`;
+
+const EVALUATION_FEW_SHOT = \`
+入力例 (ユーザーのドラフト): "Hey Alex. I fix it. Wait please."
+出力例:
+{
+  "score": 30,
+  "critique": "文法は間違っていませんが、ビジネスの場としてはあまりにもカジュアルすぎますし、情報が不足しています。「I fix it」ではなく「I will investigate it」などが適切です。",
+  "improvedVersion": "Hi Alex, thanks for the report. I'll look into it right away. Could you please wait a moment while I investigate?",
+  "grammarMistakes": ["'I fix it' は現在形ですが、これから行う動作なので 'I will fix it' または 'I am fixing it' が適切です。", "全体的に単語が不足しており、ぶっきらぼうな印象を与えます。"]
+}
+\`;
 
 // Helper to pick random element
 const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
@@ -46,11 +120,11 @@ const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 // Helper to determine persona based on level
 const getLevelContext = (level: number): string => {
   if (level <= 20) {
-    return "Level: Beginner (Levels 1-20). The user can barely communicate. Use simple vocabulary, short sentences, and very clear context.";
+    return "レベル: 初級 (Level 1-20)。ユーザーはほとんどコミュニケーションが取れません。シンプルな語彙、短い文章、非常に明確な文脈を使用してください。";
   } else if (level <= 40) {
-    return "Level: Intermediate (Levels 21-40). The user is a standard engineer. Use technical jargon (API, latency, PRs, CI/CD) freely.";
+    return "レベル: 中級 (Level 21-40)。ユーザーは標準的なエンジニアです。専門用語（API, Latency, PR, CI/CDなど）を自由に使用してください。";
   } else {
-    return "Level: Advanced (Levels 41-50). The user is a manager or lead. Use sophisticated language, idioms, and nuance.";
+    return "レベル: 上級 (Level 41-50)。ユーザーはマネージャーまたはリードです。洗練された言語、イディオム、ニュアンスを使用してください。";
   }
 };
 
@@ -83,16 +157,18 @@ export const generateReadingExercise = async (level: number): Promise<ReadingExe
   const topic = getRandom(TOPICS);
   const tone = getRandom(TONES);
 
-  const prompt = `Generate a reading comprehension exercise for a software engineer learning English.
-  ${levelContext}
+  const prompt = \`ソフトウェアエンジニアが英語を学ぶための読解問題を作成してください。
+  \${levelContext}
   
-  Scenario Variables:
-  - Topic: ${topic}
-  - Tone: ${tone}
+  シナリオ変数:
+  - トピック: \${topic}
+  - トーン: \${tone}
   
-  Create a realistic email or message from a colleague based on the above variables.
-  Include 3 multiple choice comprehension questions.
-  IMPORTANT: The 'explanation' for each question must be in Japanese.`;
+  上記の変数に基づいて、同僚からのリアルなメールやメッセージを作成してください。
+  3つの多肢選択式の読解問題を含めてください。
+  重要: 各質問の 'explanation'（解説）は日本語で記述してください。
+
+  ${READING_FEW_SHOT}`;
 
   try {
     const response = await ai.models.generateContent({
@@ -136,16 +212,18 @@ export const generateWritingScenario = async (level: number): Promise<WritingSce
   const situation = getRandom(WRITING_SITUATIONS);
   const tone = getRandom(TONES);
 
-  const prompt = `Generate a writing scenario for a software engineer.
-  ${levelContext}
+  const prompt = \`ソフトウェアエンジニア向けのライティングシナリオを作成してください。
+  \${levelContext}
   
-  Scenario Variables:
-  - Situation: ${situation}
-  - Desired Tone: ${tone}
+  シナリオ変数:
+  - シチュエーション: \${situation}
+  - 希望するトーン: \${tone}
   
-  Format constraints:
-  1. 'context' must be in English (simulate a received message or observed situation).
-  2. 'goal' and 'keyPoints' MUST be in Japanese (instructions to the user).`;
+  フォーマット制約:
+  1. 'context' は英語で記述してください（受信したメッセージや状況をシミュレート）。
+  2. 'goal' と 'keyPoints' は日本語で記述してください（ユーザーへの指示）。
+  
+  ${WRITING_SCENARIO_FEW_SHOT}`;
 
   try {
     const response = await ai.models.generateContent({
@@ -185,20 +263,22 @@ const FEEDBACK_SCHEMA: Schema = {
 export const evaluateWriting = async (level: number, scenario: WritingScenario, userDraft: string): Promise<WritingFeedback> => {
   Logger.info("Evaluating User Draft");
   const levelContext = getLevelContext(level);
-  const prompt = `Evaluate this English writing submission from a software engineer.
-  ${levelContext}
+  const prompt = \`ソフトウェアエンジニアによる英語の書き込みを評価してください。
+  \${levelContext}
   
-  Scenario Context: ${scenario.context}
-  Goal (Japanese): ${scenario.goal}
-  Recipient: ${scenario.recipientRole}
+  シナリオの背景: \${scenario.context}
+  ゴール (日本語): \${scenario.goal}
+  受信者: \${scenario.recipientRole}
   
-  User's Draft: "${userDraft}"
+  ユーザーのドラフト: "\${userDraft}"
   
-  Output Requirements:
-  1. 'score': 0-100.
-  2. 'improvedVersion': Natural English rewrite.
-  3. 'critique': Provide constructive feedback in Japanese. ALWAYS include example sentences (例文) to illustrate your points.
-  4. 'grammarMistakes': Explain errors in Japanese.`;
+  出力要件:
+  1. 'score': 0-100点。
+  2. 'improvedVersion': 自然な英語への書き直し。
+  3. 'critique': 日本語で建設的なフィードバックを提供してください。ポイントを説明するために必ず例文を含めてください。
+  4. 'grammarMistakes': エラーを日本語で説明してください。
+  
+  ${EVALUATION_FEW_SHOT}`;
 
   try {
     const response = await ai.models.generateContent({
